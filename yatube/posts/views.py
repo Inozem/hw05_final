@@ -29,11 +29,11 @@ def group_posts(request, slug):
 @login_required
 def profile(request, username):
     template = 'posts/profile.html'
-    user = get_object_or_404(User, username=username)
-    post_list = user.posts.select_related('author', 'group')
-    follower = Follow.objects.filter(user=request.user, author=user)
+    author = get_object_or_404(User, username=username)
+    post_list = author.posts.select_related('author', 'group')
+    follower = Follow.objects.filter(user=request.user, author=author)
     context = {
-        'author': user,
+        'author': author,
         'page_obj': paginator(request, post_list),
         'following': len(follower) > 0,
     }
@@ -110,6 +110,7 @@ def follow_index(request):
     return render(request, template, context)
 
 
+@login_required
 def profile_follow(request, username):
     template = 'posts/follow_done.html'
     author = get_object_or_404(User, username=username)
