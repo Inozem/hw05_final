@@ -26,16 +26,18 @@ def group_posts(request, slug):
     return render(request, template, context)
 
 
-@login_required
 def profile(request, username):
     template = 'posts/profile.html'
     author = get_object_or_404(User, username=username)
+    follower = False
+    if request.user.is_authenticated:
+        followers = Follow.objects.filter(user=request.user, author=author)
+        follower = len(followers) > 0
     post_list = author.posts.select_related('author', 'group')
-    follower = Follow.objects.filter(user=request.user, author=author)
     context = {
         'author': author,
         'page_obj': paginator(request, post_list),
-        'following': len(follower) > 0,
+        'following': follower,
     }
     return render(request, template, context)
 

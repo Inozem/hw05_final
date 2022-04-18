@@ -42,7 +42,7 @@ class PostsURLTests(TestCase):
         urls_and_statuses = {
             '/': HTTPStatus.OK,
             f'/group/{self.group.slug}/': HTTPStatus.OK,
-            f'/profile/{self.user_author.username}/': HTTPStatus.FOUND,
+            f'/profile/{self.user_author.username}/': HTTPStatus.OK,
             f'/posts/{self.post.id}/': HTTPStatus.OK,
             '/create/': HTTPStatus.FOUND,
             f'/posts/{self.post.id}/edit/': HTTPStatus.FOUND,
@@ -65,6 +65,7 @@ class PostsURLTests(TestCase):
             '/': 'posts/index.html',
             f'/group/{self.group.slug}/': 'posts/group_list.html',
             f'/posts/{self.post.id}/': 'posts/post_detail.html',
+            f'/profile/{self.user_author.username}/': 'posts/profile.html',
         }
         for page_url, template in urls_and_templates.items():
             response = self.guest_client.get(page_url)
@@ -83,9 +84,6 @@ class PostsURLTests(TestCase):
             '/create/': '/auth/login/?next=/create/',
             f'/posts/{self.post.id}/edit/': (
                 f'/auth/login/?next=/posts/{self.post.id}/edit/'
-            ),
-            f'/profile/{self.user_author.username}/': (
-                f'/auth/login/?next=/profile/{self.user_author.username}/'
             ),
         }
         for page_url, redirect_url in urls_to_redirect.items():
