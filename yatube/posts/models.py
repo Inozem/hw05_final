@@ -44,7 +44,7 @@ class Post(models.Model):
     )
     image = models.ImageField(
         verbose_name='Изображение',
-        help_text='Изображение должно быть размером 339х960 px',
+        help_text='Изображение для вашего поста',
         upload_to='posts/',
         blank=True
     )

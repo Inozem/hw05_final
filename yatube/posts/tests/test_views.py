@@ -1,12 +1,10 @@
-from xmlrpc.client import Boolean
-
 from django import forms
 from django.conf import settings
 from django.test import Client, TestCase
 from django.urls import reverse
 
 from ..forms import PostForm
-from ..models import Comment, Group, Post, User
+from ..models import Comment, Follow, Group, Post, User
 
 
 class PostsViewsTests(TestCase):
@@ -124,7 +122,7 @@ class PostsViewsTests(TestCase):
                 form_field = form.fields.get(value)
                 self.assertIsInstance(form_field, expected)
         is_edit = response.context['is_edit']
-        self.assertIsInstance(is_edit, Boolean)
+        self.assertIsInstance(is_edit, bool)
         self.assertEquals(is_edit, True)
 
     def test_post_on_pages(self):
@@ -275,35 +273,45 @@ class FollowViewsTest(TestCase):
             author=cls.author,
             text='Тестовый пост',
         )
+        cls.follow = Follow.objects.create(
+            user=cls.author,
+            author=cls.client,
+        )
 
     def setUp(self):
-        """Авторизуем автора и клиента."""
+        """Создаем гостя и авторизуем автора и клиента."""
+        self.guest = Client()
         self.authorized_client = Client()
         self.authorized_client.force_login(FollowViewsTest.client)
         self.authorized_author = Client()
         self.authorized_author.force_login(FollowViewsTest.author)
 
-    def test_following_unfollowing(self):
-        """Проверяем возможность подписываться на авторов и отписываться
-        от них"""
-        page_urls = (
-            reverse(
-                'posts:profile_follow',
-                kwargs={'username': self.author}
-            ),
-            reverse(
-                'posts:profile_unfollow',
-                kwargs={'username': self.author}
-            ),
+    def test_following(self):
+        """Проверяем возможность подписываться на авторов."""
+        count_follows = Follow.objects.count()
+        url = reverse(
+            'posts:profile_follow',
+            kwargs={'username': self.author}
         )
-        for url in page_urls:
-            with self.subTest(url=url):
-                response = self.authorized_client.get(url)
-                self.assertEqual(response.context['author'], self.author)
+        self.authorized_client.get(url)
+        self.assertEqual(Follow.objects.count(), count_follows + 1)
+        follow = Follow.objects.last()
+        self.assertEqual(follow.user, FollowViewsTest.client)
+        self.assertEqual(follow.author, FollowViewsTest.author)
+
+    def test_following_unfollowing(self):
+        """Проверяем возможность отписываться от авторов."""
+        count_follows = Follow.objects.count()
+        url = reverse(
+            'posts:profile_unfollow',
+            kwargs={'username': FollowViewsTest.client}
+        )
+        self.authorized_author.get(url)
+        self.assertEqual(Follow.objects.count(), count_follows - 1)
 
     def test_adding_followers(self):
         """Проверяем, что посты автора, на которого подписались
-        - появились у только у подписавшегося"""
+        - появились у только у подписавшегося."""
         count_of_posts = Post.objects.filter(author=self.author).count()
         users_and_counts = {
             self.authorized_client: count_of_posts,
@@ -320,3 +328,13 @@ class FollowViewsTest(TestCase):
                 self.assertEqual(
                     len(user.get(url).context['page_obj']),
                     count)
+
+    def test_following_for_guests(self):
+        """Проверяем, что неаворизованный пользователь не может подписаться"""
+        url = reverse(
+            'posts:profile_follow',
+            kwargs={'username': self.author}
+        )
+        redirect_url = f'/auth/login/?next=/profile/{self.author}/follow/'
+        response = self.guest.get(url)
+        self.assertRedirects(response, redirect_url)

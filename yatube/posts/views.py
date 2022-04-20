@@ -2,7 +2,7 @@ from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
 
 from .forms import CommentForm, PostForm
-from .models import Comment, Follow, Group, Post, User
+from .models import Follow, Group, Post, User
 from .utils import paginator
 
 
@@ -32,7 +32,7 @@ def profile(request, username):
     follower = False
     if request.user.is_authenticated:
         followers = Follow.objects.filter(user=request.user, author=author)
-        follower = len(followers) > 0
+        follower = followers.exists()
     post_list = author.posts.select_related('author', 'group')
     context = {
         'author': author,
@@ -45,7 +45,7 @@ def profile(request, username):
 def post_detail(request, post_id):
     template = 'posts/post_detail.html'
     post = get_object_or_404(Post, id=post_id)
-    comments = Comment.objects.filter(post=post_id)
+    comments = post.comments.all()
     form = CommentForm()
     context = {
         'post': post,
@@ -101,11 +101,7 @@ def add_comment(request, post_id):
 @login_required
 def follow_index(request):
     template = 'posts/follow.html'
-    followers = Follow.objects.filter(user=request.user)
-    post_list = []
-    for follower in followers:
-        for post in Post.objects.filter(author=follower.author):
-            post_list.append(post)
+    post_list = Post.objects.filter(author__following__user=request.user)
     context = {
         'page_obj': paginator(request, post_list),
     }
@@ -118,7 +114,7 @@ def profile_follow(request, username):
     author = get_object_or_404(User, username=username)
     if author.id != request.user.id:
         follower = Follow.objects.filter(user=request.user, author=author)
-        if len(follower) > 0:
+        if follower.exists():
             return redirect('posts:profile', author)
         follow = Follow(request.POST or None, user=request.user, author=author)
         follow.save()

@@ -1,6 +1,6 @@
 from django.test import TestCase
 
-from ..models import Group, Post, User
+from ..models import Comment, Group, Post, User
 
 
 class PostModelTest(TestCase):
@@ -19,6 +19,11 @@ class PostModelTest(TestCase):
         cls.post = Post.objects.create(
             author=cls.user,
             text='Тестовый пост ' * 5,
+        )
+        cls.comment = Comment.objects.create(
+            post=cls.post,
+            author=cls.user,
+            text='Тестовый комментарий'
         )
 
     def test_models_have_correct_object_names(self):
@@ -44,6 +49,7 @@ class PostModelTest(TestCase):
         testing_object_verbose = {
             self.group: 'Группа публикаций',
             self.post: 'Публикация',
+            self.comment: 'Комментарий',
         }
         testing_object_fields_verbose = {
             self.group: {
@@ -57,6 +63,12 @@ class PostModelTest(TestCase):
                 'author': 'Автор',
                 'group': 'Группа поста',
                 'image': 'Изображение'
+            },
+            self.comment: {
+                'post': 'Пост',
+                'author': 'Автор',
+                'text': 'Текст комментария',
+                'created': 'Дата публикации',
             }
         }
         for model, test_attributes in testing_object_fields_verbose.items():
