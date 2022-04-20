@@ -138,6 +138,7 @@ class PostsViewsTests(TestCase):
             with self.subTest(template=template):
                 self.post_context_test(response)
 
+
     def test_index_cach(self):
         """Проверяем сохраняются ли посты в кэш на главной странице"""
         response = self.authorized_author.get(self.urls['index'])
