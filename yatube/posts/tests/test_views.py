@@ -299,7 +299,7 @@ class FollowViewsTest(TestCase):
         self.assertEqual(follow.user, FollowViewsTest.client)
         self.assertEqual(follow.author, FollowViewsTest.author)
 
-    def test_following_unfollowing(self):
+    def test_unfollowing(self):
         """Проверяем возможность отписываться от авторов."""
         count_follows = Follow.objects.count()
         url = reverse(
